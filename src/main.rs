@@ -1,7 +1,7 @@
-use std::fs;
-use std::io::{self, BufRead};
 use std::env;
+use std::fs;
 use std::io::Error;
+use std::io::{self, BufRead};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -12,7 +12,6 @@ fn main() {
     } else {
         run_prompt();
     }
-
 }
 
 fn run_file(path: &String) {
@@ -26,18 +25,16 @@ fn run_prompt() {
     let stdin = io::stdin();
     for line in stdin.lock().lines() {
         match line {
-            Ok(line) =>{
-                run(line).unwrap_or_else(|err| {
-                    eprintln!("omg!!! {}", err);
-                })
-            },
-            Err(_e) => break
+            Ok(line) => run(line).unwrap_or_else(|err| {
+                eprintln!("omg!!! {}", err);
+            }),
+            Err(_e) => break,
         }
     }
 }
 
 fn run(source: String) -> Result<(), Error> {
-    let tokens: Vec<&str> = source.split(" ").collect();
+    let tokens: Vec<&str> = source.split(' ').collect();
     for token in tokens {
         println!("{}", token);
     }
