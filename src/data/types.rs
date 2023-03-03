@@ -1,6 +1,5 @@
-use std::fmt;
-
-enum TokenType {
+#[derive(Clone)]
+pub enum TokenType {
     // single character
     LeftParen,
     RightParen,
@@ -49,12 +48,3 @@ enum TokenType {
 
     End // eof
 }
-/** i don't wanna do this yet but i bet i will have to
- * impl fmt::Display for TokenType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            TokenType::LeftBrace => write!(f, "{")
-        }
-    }
-}
- */

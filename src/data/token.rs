@@ -1,5 +1,6 @@
 use crate::data::types::TokenType;
 
+#[derive(Clone)]
 pub struct Token {
     tt: TokenType,
     lexeme: String,
