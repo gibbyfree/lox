@@ -1,3 +1,4 @@
+use crate::data::payload::ScanResult;
 use crate::data::token::Token;
 use crate::data::types::TokenType;
 
@@ -26,13 +27,15 @@ impl Scanner {
 
         while Self::is_at_end(self.current, self.source.len()) {
             self.start = self.current;
-            Self::scan_token(
+            let res = Self::scan_token(
                 &self.source,
                 self.current,
                 self.start,
                 self.line,
                 &mut tokens,
             );
+            self.line += res.lines();
+            self.current += res.read() as usize;
         }
 
         tokens.push(Token::new(TokenType::End, String::from(""), self.line));
@@ -46,8 +49,8 @@ impl Scanner {
         start: usize,
         line: i16,
         tokens: &mut Vec<Token>,
-    ) -> i16 {
-        let mut read: i16 = 0; // red not reed!
+    ) -> ScanResult {
+        let mut res = ScanResult::new();
         match Self::advance(source, current) {
             '(' => Self::add_token(TokenType::LeftParen, tokens, start, current, source, line),
             ')' => Self::add_token(TokenType::RightParen, tokens, start, current, source, line),
@@ -66,7 +69,7 @@ impl Scanner {
                     TokenType::Bang
                 };
                 Self::add_token(t, tokens, start, current, source, line);
-                read += 1
+                res.inc_read();
             },
             '=' => {
                 let t = if Self::cond_advance(source, current, '=') {
@@ -75,7 +78,7 @@ impl Scanner {
                     TokenType::Equal
                 };
                 Self::add_token(t, tokens, start, current, source, line);
-                read += 1
+                res.inc_read();
             },
             '>' => {
                 let t = if Self::cond_advance(source, current, '=') {
@@ -84,7 +87,7 @@ impl Scanner {
                     TokenType::Equal
                 };
                 Self::add_token(t, tokens, start, current, source, line);
-                read += 1
+                res.inc_read();
             },
             '<' => {
                 let t = if Self::cond_advance(source, current, '=') {
@@ -93,14 +96,35 @@ impl Scanner {
                     TokenType::Equal
                 };
                 Self::add_token(t, tokens, start, current, source, line);
-                read += 1
-            }
+                res.inc_read();
+            },
+            '/' => {
+                if Self::cond_advance(source, current, '/') {
+                    while Self::peek(current, source) != '\n' && !Self::is_at_end(current, source.len()) {
+                        let _trash = Self::advance(source, current);
+                        res.inc_read();
+                    }
+                } else {
+                    Self::add_token(TokenType::Slash, tokens, start, current, source, line);
+                    res.inc_read();
+                };
+            },
+            ' ' | '\t' | '\r' => (),
+            '\n' => res.inc_lines(),
             _ => println!("surface lexical error to main later"),
         }
-        read + 1
+        res.inc_read();
+        res
     }
 
     // helpers
+
+    fn peek(current: usize, source: &str) -> char {
+        if Self::is_at_end(current, source.len()) { 
+            return '\0';
+        }
+        return source.chars().nth(current).expect("peek machine broke");
+    }
 
     fn is_at_end(current: usize, source_len: usize) -> bool {
         current >= source_len
