@@ -67,6 +67,33 @@ impl Scanner {
                 };
                 Self::add_token(t, tokens, start, current, source, line);
                 read += 1
+            },
+            '=' => {
+                let t = if Self::cond_advance(source, current, '=') {
+                    TokenType::EqualEqual
+                } else {
+                    TokenType::Equal
+                };
+                Self::add_token(t, tokens, start, current, source, line);
+                read += 1
+            },
+            '>' => {
+                let t = if Self::cond_advance(source, current, '=') {
+                    TokenType::GreaterEqual
+                } else {
+                    TokenType::Equal
+                };
+                Self::add_token(t, tokens, start, current, source, line);
+                read += 1
+            },
+            '<' => {
+                let t = if Self::cond_advance(source, current, '=') {
+                    TokenType::LessEqual
+                } else {
+                    TokenType::Equal
+                };
+                Self::add_token(t, tokens, start, current, source, line);
+                read += 1
             }
             _ => println!("surface lexical error to main later"),
         }
