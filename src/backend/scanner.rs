@@ -101,7 +101,6 @@ impl Scanner {
             '/' => {
                 if Self::cond_advance(source, current, '/') {
                     while Self::peek(current, source) != '\n' && !Self::is_at_end(current, source.len()) {
-                        let _trash = Self::advance(source, current);
                         res.inc_read();
                     }
                 } else {
@@ -109,6 +108,14 @@ impl Scanner {
                     res.inc_read();
                 };
             },
+            '"' => {
+                let sub_res = Self::string(current, source, start);
+                res.inc_lines_by_x(sub_res.lines());
+                res.inc_read_by_x(sub_res.read());
+                if let Some(tt) = sub_res.token_to_add() {
+                    Self::add_token(tt, tokens, start, current, source, line);
+                }
+            }
             ' ' | '\t' | '\r' => (),
             '\n' => res.inc_lines(),
             _ => println!("surface lexical error to main later"),
@@ -118,6 +125,33 @@ impl Scanner {
     }
 
     // helpers
+
+    fn string(current: usize, source: &str, start: usize) -> ScanResult {
+        let mut res = ScanResult::new(); // let's just append to top-level response later
+        let mut loc_current = current; // local current
+        while Self::peek(loc_current, source) != '"' && !Self::is_at_end(loc_current, source.len()) {
+            if Self::peek(loc_current, source) == '\n' {
+                res.inc_lines();
+            }
+            res.inc_read();
+            loc_current += 1;
+        }
+
+        if Self::is_at_end(loc_current, source.len()) {
+            println!("Unterminated string."); // surface error here
+            return res;
+        }
+
+        // one more 'advance' for the closing quote
+        res.inc_read();
+        loc_current += 1;
+
+        // trim surrounding quotes
+        let val = &source[start + 1..loc_current - 1];
+        res.set_token(TokenType::String(val.to_string()));
+
+        res
+    }
 
     fn peek(current: usize, source: &str) -> char {
         if Self::is_at_end(current, source.len()) { 
