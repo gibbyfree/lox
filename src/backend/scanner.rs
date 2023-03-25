@@ -70,7 +70,7 @@ impl Scanner {
                 };
                 Self::add_token(t, tokens, start, current, source, line);
                 res.inc_read();
-            },
+            }
             '=' => {
                 let t = if Self::cond_advance(source, current, '=') {
                     TokenType::EqualEqual
@@ -79,7 +79,7 @@ impl Scanner {
                 };
                 Self::add_token(t, tokens, start, current, source, line);
                 res.inc_read();
-            },
+            }
             '>' => {
                 let t = if Self::cond_advance(source, current, '=') {
                     TokenType::GreaterEqual
@@ -88,7 +88,7 @@ impl Scanner {
                 };
                 Self::add_token(t, tokens, start, current, source, line);
                 res.inc_read();
-            },
+            }
             '<' => {
                 let t = if Self::cond_advance(source, current, '=') {
                     TokenType::LessEqual
@@ -97,20 +97,29 @@ impl Scanner {
                 };
                 Self::add_token(t, tokens, start, current, source, line);
                 res.inc_read();
-            },
+            }
             '/' => {
                 if Self::cond_advance(source, current, '/') {
-                    while Self::peek(current, source) != '\n' && !Self::is_at_end(current, source.len()) {
+                    while Self::peek(current, source) != '\n'
+                        && !Self::is_at_end(current, source.len())
+                    {
                         res.inc_read();
                     }
                 } else {
                     Self::add_token(TokenType::Slash, tokens, start, current, source, line);
                     res.inc_read();
                 };
-            },
+            }
             '"' => {
                 let sub_res = Self::string(current, source, start);
                 res.inc_lines_by_x(sub_res.lines());
+                res.inc_read_by_x(sub_res.read());
+                if let Some(tt) = sub_res.token_to_add() {
+                    Self::add_token(tt, tokens, start, current, source, line);
+                }
+            }
+            '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => {
+                let sub_res = Self::number(current, source, start);
                 res.inc_read_by_x(sub_res.read());
                 if let Some(tt) = sub_res.token_to_add() {
                     Self::add_token(tt, tokens, start, current, source, line);
@@ -126,10 +135,38 @@ impl Scanner {
 
     // helpers
 
+    fn number(current: usize, source: &str, start: usize) -> ScanResult {
+        let mut res = ScanResult::new();
+        let mut loc_current = current;
+
+        while Self::peek(loc_current, source).is_ascii_digit() {
+            res.inc_read();
+            loc_current += 1;
+        }
+
+        // fractional part
+        if Self::peek(loc_current, source) == '.' && Self::double_peek(loc_current, source).is_ascii_digit() {
+            res.inc_read(); // decimal
+            loc_current += 1;
+
+            while Self::peek(loc_current, source).is_ascii_digit() {
+                res.inc_read();
+                loc_current += 1;
+            }
+        }
+
+        // create token
+        let val = &source[start..current];
+        res.set_token(TokenType::Number(val.parse::<f32>().expect("failed to parse number")));
+
+        res
+    }
+
     fn string(current: usize, source: &str, start: usize) -> ScanResult {
         let mut res = ScanResult::new(); // let's just append to top-level response later
         let mut loc_current = current; // local current
-        while Self::peek(loc_current, source) != '"' && !Self::is_at_end(loc_current, source.len()) {
+        while Self::peek(loc_current, source) != '"' && !Self::is_at_end(loc_current, source.len())
+        {
             if Self::peek(loc_current, source) == '\n' {
                 res.inc_lines();
             }
@@ -153,11 +190,20 @@ impl Scanner {
         res
     }
 
+    // peek ahead by 1 character
     fn peek(current: usize, source: &str) -> char {
-        if Self::is_at_end(current, source.len()) { 
+        if Self::is_at_end(current, source.len()) {
             return '\0';
         }
         return source.chars().nth(current).expect("peek machine broke");
+    }
+
+    // peek ahead by 2 characters
+    fn double_peek(current: usize, source: &str) -> char {
+        if Self::is_at_end(current + 1, source.len()) {
+            return '\0';
+        }
+        return source.chars().nth(current + 1).expect("double peek machine broke");
     }
 
     fn is_at_end(current: usize, source_len: usize) -> bool {
@@ -165,9 +211,13 @@ impl Scanner {
     }
 
     fn cond_advance(source: &str, current: usize, expected: char) -> bool {
-        if Self::is_at_end(current, source.len()) { return false; }
+        if Self::is_at_end(current, source.len()) {
+            return false;
+        }
         let next = source.chars().nth(current + 1).expect("cond advance");
-        if next != expected { return false; }
+        if next != expected {
+            return false;
+        }
         true
     }
 
