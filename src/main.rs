@@ -3,14 +3,17 @@ use std::fs;
 use std::io::Error;
 use std::io::{self, BufRead};
 
+use backend::scanner::Scanner;
+use data::token::Token;
+
 mod backend;
 mod data;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    if args.len() > 1 {
+    if args.len() > 2 {
         panic!("Usage: loxrs [script]");
-    } else if std::env::args().count() == 1 {
+    } else if std::env::args().count() == 2 {
         run_file(&args[0]);
     } else {
         run_prompt();
@@ -37,9 +40,10 @@ fn run_prompt() {
 }
 
 fn run(source: String) -> Result<(), Error> {
-    let tokens: Vec<&str> = source.split(' ').collect();
+    let scanner: Scanner = Scanner::new(source);
+    let tokens: Vec<Token> = scanner.scan_tokens();
     for token in tokens {
-        println!("{}", token);
+        println!("{:?}", token);
     }
     Ok(())
 }

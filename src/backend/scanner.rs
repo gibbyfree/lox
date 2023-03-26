@@ -46,11 +46,11 @@ impl Scanner {
         }
     }
 
-    fn scan_tokens(mut self) -> Vec<Token> {
+    pub fn scan_tokens(mut self) -> Vec<Token> {
         let mut tokens = Vec::new();
         std::mem::swap(&mut tokens, &mut self.tokens);
 
-        while Self::is_at_end(self.current, self.source.len()) {
+        while !Self::is_at_end(self.current, self.source.len()) {
             self.start = self.current;
             let res = Self::scan_token(
                 &self.source,
@@ -201,7 +201,9 @@ impl Scanner {
         }
 
         // fractional part
-        if Self::peek(loc_current, source) == '.' && Self::double_peek(loc_current, source).is_ascii_digit() {
+        if Self::peek(loc_current, source) == '.'
+            && Self::double_peek(loc_current, source).is_ascii_digit()
+        {
             res.inc_read(); // decimal
             loc_current += 1;
 
@@ -213,14 +215,16 @@ impl Scanner {
 
         // create token
         let val = &source[start..loc_current];
-        res.set_token(TokenType::Number(val.parse::<f32>().expect("failed to parse number")));
+        res.set_token(TokenType::Number(
+            val.parse::<f32>().expect("failed to parse number"),
+        ));
 
         res
     }
 
     fn string(current: usize, source: &str, start: usize) -> ScanResult {
         let mut res = ScanResult::new(); // let's just append to top-level response later
-        let mut loc_current = current; // local current
+        let mut loc_current = current + 1; // local current - consume the open quote
         while Self::peek(loc_current, source) != '"' && !Self::is_at_end(loc_current, source.len())
         {
             if Self::peek(loc_current, source) == '\n' {
@@ -261,7 +265,10 @@ impl Scanner {
         if Self::is_at_end(current + 1, source.len()) {
             return '\0';
         }
-        return source.chars().nth(current + 1).expect("double peek machine broke");
+        return source
+            .chars()
+            .nth(current + 1)
+            .expect("double peek machine broke");
     }
 
     fn is_at_end(current: usize, source_len: usize) -> bool {
@@ -280,7 +287,7 @@ impl Scanner {
     }
 
     fn advance(source: &str, current: usize) -> char {
-        source.chars().nth(current + 1).expect("current is borked")
+        return source.chars().nth(current).expect("current is borked");
     }
 
     // MISC. HELPERS //
