@@ -1,6 +1,8 @@
 use crate::data::payload::ScanResult;
 use crate::data::token::Token;
 use crate::data::types::TokenType;
+use lazy_static::lazy_static;
+use std::collections::HashMap;
 
 pub struct Scanner {
     source: String,
@@ -8,6 +10,29 @@ pub struct Scanner {
     start: usize,   // first char in scanned lexeme
     current: usize, // char considered
     line: i16,      // source line of current
+}
+
+lazy_static! {
+    static ref KEYWORDS: HashMap<&'static str, TokenType> = {
+        let mut m = HashMap::new();
+        m.insert("and", TokenType::And);
+        m.insert("class", TokenType::Class);
+        m.insert("else", TokenType::Else);
+        m.insert("false", TokenType::False);
+        m.insert("for", TokenType::For);
+        m.insert("fun", TokenType::Fun);
+        m.insert("if", TokenType::If);
+        m.insert("nil", TokenType::Nil);
+        m.insert("or", TokenType::Or);
+        m.insert("print", TokenType::Print);
+        m.insert("return", TokenType::Return);
+        m.insert("super", TokenType::Super);
+        m.insert("this", TokenType::This);
+        m.insert("true", TokenType::True);
+        m.insert("var", TokenType::Var);
+        m.insert("while", TokenType::While);
+        m
+    };
 }
 
 impl Scanner {
@@ -127,13 +152,44 @@ impl Scanner {
             }
             ' ' | '\t' | '\r' => (),
             '\n' => res.inc_lines(),
-            _ => println!("surface lexical error to main later"),
+            _ => {
+                if Self::is_alpha(Self::advance(source, current)) {
+                    let sub_res = Self::identifier_or_keyword(current, source, start);
+                    res.inc_read_by_x(sub_res.read());
+                    if let Some(tt) = sub_res.token_to_add() {
+                        Self::add_token(tt, tokens, start, current, source, line);
+                    }
+                } else {
+                    println!("surface lexical error to main later");
+                }
+            }
         }
         res.inc_read();
         res
     }
 
-    // helpers
+    // SCANRESULT HELPERS //
+
+    fn identifier_or_keyword(current: usize, source: &str, start: usize) -> ScanResult {
+        let mut res = ScanResult::new();
+        let mut loc_current = current;
+
+        while Self::is_alpha_numeric(Self::peek(loc_current, source)) {
+            res.inc_read();
+            loc_current += 1;
+        }
+
+        let val = &source[start..loc_current];
+        if let Some(kw) = KEYWORDS.get(val) {
+            // tis a keyword
+            res.set_token(kw.clone());
+        } else {
+            // identifier
+            res.set_token(TokenType::Identifier); // weird we don't save the string here?
+        }
+
+        res
+    }
 
     fn number(current: usize, source: &str, start: usize) -> ScanResult {
         let mut res = ScanResult::new();
@@ -156,7 +212,7 @@ impl Scanner {
         }
 
         // create token
-        let val = &source[start..current];
+        let val = &source[start..loc_current];
         res.set_token(TokenType::Number(val.parse::<f32>().expect("failed to parse number")));
 
         res
@@ -189,6 +245,8 @@ impl Scanner {
 
         res
     }
+
+    // PEEKING HELPERS //
 
     // peek ahead by 1 character
     fn peek(current: usize, source: &str) -> char {
@@ -225,6 +283,17 @@ impl Scanner {
         source.chars().nth(current + 1).expect("current is borked")
     }
 
+    // MISC. HELPERS //
+    // snake case identifiers are valid
+    fn is_alpha(c: char) -> bool {
+        c.is_ascii_alphabetic() || c == '_'
+    }
+
+    fn is_alpha_numeric(c: char) -> bool {
+        Self::is_alpha(c) || c.is_ascii_digit()
+    }
+
+    // ADD TOKEN //
     // no need for multiple token fns when tokentype can contain literals
     fn add_token(
         t: TokenType,
