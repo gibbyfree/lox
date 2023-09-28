@@ -1,9 +1,7 @@
-[package]
-name = "loxrs"
-version = "0.1.0"
-edition = "2021"
+[workspace]
+members = ["loxrs", "base", "ast_printer"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[dependencies]
+[workspace.dependencies]
 lazy_static = "1.4.0"

@@ -3,11 +3,8 @@ use std::fs;
 use std::io::Error;
 use std::io::{self, BufRead};
 
-use backend::scanner::Scanner;
-use data::token::Token;
-
-mod backend;
-mod data;
+use base::backend::scanner::Scanner;
+use base::data::token::Token;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
