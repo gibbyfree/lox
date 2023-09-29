@@ -1,57 +1,45 @@
 use crate::data::token::Token;
 
-trait Expr { }
+pub enum Expr {
+    Binary(Binary),
+    Grouping(Grouping),
+    Literal(Literal),
+    Unary(Unary),
+}
 
-trait Visitor<R> { 
+impl Expr {
+    pub fn accept<R>(&self, visitor: &dyn Visitor<R>) -> R {
+        match self {
+            Expr::Binary(binary) => visitor.visit_binary_expr(binary),
+            Expr::Grouping(grouping) => visitor.visit_grouping_expr(grouping),
+            Expr::Literal(literal) => visitor.visit_literal_expr(literal),
+            Expr::Unary(unary) => visitor.visit_unary_expr(unary),
+        }
+    }
+}
+
+pub trait Visitor<R> {
     fn visit_binary_expr(&self, binary: &Binary) -> R;
     fn visit_grouping_expr(&self, grouping: &Grouping) -> R;
     fn visit_literal_expr(&self, literal: &Literal) -> R;
     fn visit_unary_expr(&self, unary: &Unary) -> R;
 }
 
-trait Visitable<R> {
-    fn accept(&self, visitor: &dyn Visitor<R>) -> R;
+pub struct Binary {
+    pub left: Box<Expr>,
+    pub operator: Token,
+    pub right: Box<Expr>,
 }
 
-struct Binary {
-    left: Box<dyn Expr>,
-    operator: Token,
-    right: Box<dyn Expr>
+pub struct Grouping {
+    pub expr: Box<Expr>,
 }
 
-impl<R> Visitable<R> for Binary {
-    fn accept(&self, visitor: &dyn Visitor<R>) -> R {
-        visitor.visit_binary_expr(self)
-    }
+pub struct Unary {
+    pub operator: Token,
+    pub right: Box<Expr>,
 }
 
-struct Grouping {
-    expr: Box<dyn Expr>
-}
-
-impl<R> Visitable<R> for Grouping {
-    fn accept(&self, visitor: &dyn Visitor<R>) -> R {
-        visitor.visit_grouping_expr(self)
-    }
-}
-
-struct Unary {
-    operator: Token,
-    right: Box<dyn Expr>
-}
-
-impl<R> Visitable<R> for Unary {
-    fn accept(&self, visitor: &dyn Visitor<R>) -> R {
-        visitor.visit_unary_expr(self)
-    }
-}
-
-struct Literal {
-    value: Token
-}
-
-impl<R> Visitable<R> for Literal {
-    fn accept(&self, visitor: &dyn Visitor<R>) -> R {
-        visitor.visit_literal_expr(self)
-    }
+pub struct Literal {
+    pub value: Token,
 }

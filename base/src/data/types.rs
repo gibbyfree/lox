@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[derive(Clone, Debug)]
 pub enum TokenType {
     // single character
@@ -46,5 +48,5 @@ pub enum TokenType {
     Var,
     While,
 
-    End // eof
+    End, // eof
 }

@@ -3,7 +3,7 @@ use super::types::TokenType;
 pub struct ScanResult {
     read: i16, // red not reed!
     lines: i16,
-    token_to_add: Option<TokenType>
+    token_to_add: Option<TokenType>,
 }
 
 impl ScanResult {

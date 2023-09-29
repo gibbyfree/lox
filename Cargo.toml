@@ -1,7 +1,9 @@
 [workspace]
 members = ["loxrs", "base", "ast_printer"]
+resolver = "2"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [workspace.dependencies]
 lazy_static = "1.4.0"
+anyhow = "1.0"

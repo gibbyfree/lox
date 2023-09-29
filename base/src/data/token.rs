@@ -1,10 +1,11 @@
-use crate::data::types::TokenType;
+use super::types::TokenType;
+use std::fmt::{Display, Formatter};
 
 #[derive(Clone, Debug)]
 pub struct Token {
-    tt: TokenType,
-    lexeme: String,
-    line: i16,
+    pub tt: TokenType,
+    pub lexeme: String,
+    pub line: i16,
 }
 
 impl Token {
@@ -12,4 +13,9 @@ impl Token {
         Self { tt, lexeme, line }
     }
 }
-    
+
+impl Display for Token {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?} {} {}", self.tt, self.lexeme, self.line)
+    }
+}
